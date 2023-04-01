@@ -68,7 +68,7 @@ public class Foo {
 ```
 
 
-# 3. 자바에서 제공하는 함수형 인터페이스
+## 3. 자바에서 제공하는 함수형 인터페이스
 ### Java가 기본으로 제공하는 함수형 인터페이스
 - java.util.function 패키지
 - 자바에서 미리 정의해둔 자주 사용할만한 함수 인터페이스
@@ -151,7 +151,7 @@ get10.get(): 10
 - BiFunction<T, U, R>의 특수한 형태로, 동일한 타입의 입렵값 두개를 받아 리턴하는 함수 인터페이스
 
 
-# 4. 람다 표현식
+## 4. 람다 표현식
 ### 람다
 - (인자 리스트) -> {바디}
 
@@ -241,7 +241,7 @@ printBaseNumber(): 11
 [https://docs.oracle.com/javase/tutorial/java/javaOO/nested.html#shadowing](https://docs.oracle.com/javase/tutorial/java/javaOO/nested.html#shadowing)
 [https://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html](https://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html)
 
-# 5. 메소드 레퍼런스
+## 5. 메소드 레퍼런스
 람다가 하는 일이 기존 메소드 또는 생성자를 호출하는 거라면, 메소드 레퍼런스를 사용해서 매우 간결하게 표현할 수 있다.
 
 메소드 참조하는 방법
@@ -301,3 +301,86 @@ young.getName(): young
 ### 참고
 [https://docs.oracle.com/javase/tutorial/java/javaOO/methodreferences.html](https://docs.oracle.com/javase/tutorial/java/javaOO/methodreferences.html
 )
+
+# 3부 인터페이스의 변화
+## 6. 인터페이스 기본 메소드와 스태틱 메소드
+### 기본 메소드 (Default Method)
+- 인터페이스에 메소드 선언이 아니라 구현체를 제공하는 방법
+- 해당 인터페이스를 구현한 클래스를 깨트리지 않고 새 기능을 추가할 수 있다.
+- 기본 메소드는 구현체가 모르게 추가된 기능으로 그만큼 리스크가 있다.
+  - 컴파일 에러는 아니지만 구현체에 따라 런타임 에러가 발생할 수 있다.
+  - 반드시 문서화 할 것. (@implSpec 자바 태그 사용)
+- Object가 제공하는 기능(equals, hasCode)는 기본 메소드로 제공할 수 없다.
+  - 구현체가 재정의해야 한다.
+- 본인이 수정할 수 있는 인터페이스에만 기본 메소드 제공할 수 있다.
+- 인터페이스를 상속받는 인터페이스에서 다시 추상 메소드로 변경할 수 있다.
+- 인터페이스 구현체가 재정의 할 수도 있다.
+
+```java
+public interface Foo6 {
+  void printName();
+
+  /**
+   * @implSpec 이 구현체는 getName()으로 가져온 문자열을 대문자로 바꿔 출력한다.
+   */
+  default void printNameUpperCase() {
+    System.out.println(getName().toUpperCase());
+  }
+
+  static void printAnything() {
+    System.out.println("Foo6");
+  }
+
+  String getName();
+}
+```
+
+```java
+public class DefaultFoo6 implements Foo6, Bar6 {
+
+  String name;
+
+  public DefaultFoo6(String name) {
+    this.name = name;
+  }
+
+  @Override
+  public void printName() {
+    System.out.println(name);
+  }
+
+  @Override
+  public void printNameUpperCase() {
+    Foo6.super.printNameUpperCase();
+  }
+
+  @Override
+  public String getName() {
+    return name;
+  }
+}
+```
+
+```java
+public class App6 {
+
+  public static void main(String[] args) {
+    Foo6 foo6 = new DefaultFoo6("young");
+    foo6.printName();
+    foo6.printNameUpperCase();
+    Foo6.printAnything();
+  }
+}
+```
+```text
+young
+YOUNG
+Foo6
+```
+
+### 스태틱 메소드
+- 해당 타입 관련 헬퍼 또는 유틸리티 메소드를 제공할 때 인터페이에 스태 메소드를 제공할 수 있다.
+
+### 참고
+[https://docs.oracle.com/javase/tutorial/java/IandI/nogrow.html](https://docs.oracle.com/javase/tutorial/java/IandI/nogrow.html)
+[https://docs.oracle.com/javase/tutorial/java/IandI/defaultmethods.html](https://docs.oracle.com/javase/tutorial/java/IandI/defaultmethods.html)
