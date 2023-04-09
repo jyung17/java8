@@ -1,4 +1,4 @@
-package me.whiteship.java8to11;
+package me.whiteship.java8to11.app6;
 
 public interface Foo6 {
   void printName();

@@ -1,4 +1,7 @@
-package me.whiteship.java8to11;
+package me.whiteship.java8to11.app6;
+
+import me.whiteship.java8to11.app6.Bar6;
+import me.whiteship.java8to11.app6.Foo6;
 
 public class DefaultFoo6 implements Foo6, Bar6 {
 

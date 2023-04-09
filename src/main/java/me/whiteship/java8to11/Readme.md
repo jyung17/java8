@@ -384,3 +384,240 @@ Foo6
 ### 참고
 [https://docs.oracle.com/javase/tutorial/java/IandI/nogrow.html](https://docs.oracle.com/javase/tutorial/java/IandI/nogrow.html)
 [https://docs.oracle.com/javase/tutorial/java/IandI/defaultmethods.html](https://docs.oracle.com/javase/tutorial/java/IandI/defaultmethods.html)
+
+## 7. 자바 8 API의 기본 메서드와 스태틱 메소드
+자바 8에서 추가한 기본 메소드로 인한 API 변화
+### Iterable의 기본 메소드
+- forEach()
+- spliterator()
+
+```java
+List<String> name = new ArrayList<>();
+name.add("young");
+name.add("whiteship");
+name.add("toby");
+name.add("foo");
+
+name.forEach(System.out::println);
+
+Spliterator<String> spliterator = name.spliterator();
+while (spliterator.tryAdvance(System.out::println));
+```
+```text
+young
+whiteship
+toby
+foo
+
+young
+whiteship
+toby
+foo
+```
+
+### Collection의 기본 메서드
+- stream() / parallelStream()
+- removeIf(Predicate)
+- spliterator()
+
+### Comparator의 기본 메소드 및 스태틱 메소드
+- reversed()
+- thenComparing()
+- static reverseOrder() / naturalOrder()
+- static nullsFirst() / nullsLast()
+- static comparing()
+
+### 참고
+[https://docs.oracle.com/javase/8/docs/api/java/util/Spliterator.html](https://docs.oracle.com/javase/8/docs/api/java/util/Spliterator.html)
+[https://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html](https://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html)
+[https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html](https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html)
+[https://docs.oracle.com/javase/8/docs/api/java/util/Comparator.html](https://docs.oracle.com/javase/8/docs/api/java/util/Comparator.html)
+
+## 8. Stream 소개
+### Stream
+- sequence of elements supporting sequential and parallel aggregate operations
+- 데이터를 담고 있는 저장소(컬렉션)이 아니다.
+- Functional in nature, 스트림이 처리하는 데이터 소스를 변경하지 않는다.
+- 스트림으로 처리하는 데이터는 오직 한번만 처리한다.
+- 무제한일 수도 있다. (Short Circuit 메소드를 사용해서 제한할 수 있다.)
+- 중개 오퍼레이션은 근본적으로 lazy 하다.
+- 손쉽게 병렬 처리할 수 있다.
+
+### 스트림 파이프라인
+- 0 또는 다수의 중개 오퍼레이션 (intermediate operation)과 한개의 종료 오퍼레이션 (terminal operation)으로 구성한다.
+- 스트림의 데이터 소스는 오직 터미널 오퍼네이션을 실행할 떄에만 처리한다.
+
+### 중개 오퍼레이션
+- Stream을 리턴한다.
+- Stateless / Stateful 오퍼레이션으로 더 상세하게 구분할 수도 있다. (대부분은 Stateless지만 distinct나 sorted 처럼 이전 이전 소스 데이터를 참조해야 하는 오퍼레이션은 Stateful 오퍼레이션이다.)
+- filter, map, limit, skip, sorted, ...
+
+### 종료 오퍼레이션
+- Stream을 리턴하지 않는다.
+- collect, allMatch, count, forEach, min, max, ...
+
+### 참고
+- [https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html](https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html)
+- [https://docs.oracle.com/javase/8/docs/api/java/util/stream/Stream.html](https://docs.oracle.com/javase/8/docs/api/java/util/stream/Stream.html)
+
+## 9. Stream API
+### 걸러내기
+- Filter(Predicate)
+- 예) 이름이 3글자 이상인 데이터만 새로운 스트림으로
+```java
+List<OnlineClass> springClasses = new ArrayList<>();
+springClasses.add(new OnlineClass(1, "spring boot", true));
+springClasses.add(new OnlineClass(2, "spring data jpa", true));
+springClasses.add(new OnlineClass(3, "spring mvc", false));
+springClasses.add(new OnlineClass(4, "spring core", false));
+springClasses.add(new OnlineClass(5, "rest api development", false));
+
+springClasses.stream()
+    .filter(oc -> oc.getTitle().length() > 2)
+    .forEach(oc -> System.out.println(oc.getTitle()));
+/* 
+  spring boot
+  spring data jpa
+  spring mvc
+  spring core
+  rest api development
+ */
+```
+
+### 변경하기
+- Map(Function) 또는 FlatMap(Function)
+- 예) 각각의 Post 인스턴스에서 String title만 새로운 스트림으로
+- 예) List<Stream<String>>을 String의 스트림으로
+
+### 생성하기
+- generate(Supplier) 또는 Iterate(T seed, UnaryOperator)
+- 예) 10부터 1씩 증가하는 무제한 숫자 스트림
+- 예) 랜덤 int 무제한 스트림
+
+### 제한하기
+- limit(long) 또는 skip(long)
+- 예) 최대 5개의 요소가 담긴 스트림을 리턴한다.
+- 예) 앞에서 3개를 뺀 나머지 스트림을 리턴한다.
+
+### 스트림에 있는 데이터가 특정 조건을 만족하는지 확인
+- anyMatch(), allMatch(), nonMatch()
+- 예) k로 시작하는 문자열이 있는지 학인한다. (true 또는 false를 리턴한다.)
+- 예) 스트림에 있는 모든 값이 10보다 작은지 확인한다.
+
+### 개수 세기
+- count()
+- 예) 10보다 큰 수의 개수를 센다.
+
+### 스트림을 데이터 하나로 뭉치기
+- reduce(identity, BiFunction), collect(), sum(), max()
+- 예) 모든 숫자 합 구하기
+- 예) 모든 데이터를 하나의 List 또는 Set에 옮겨 담기
+
+
+### 예시
+- "spring 으로 시작하는 수업"
+```java
+List<OnlineClass> springClasses = new ArrayList<>();
+springClasses.add(new OnlineClass(1, "spring boot", true));
+springClasses.add(new OnlineClass(2, "spring data jpa", true));
+springClasses.add(new OnlineClass(3, "spring mvc", false));
+springClasses.add(new OnlineClass(4, "spring core", false));
+springClasses.add(new OnlineClass(5, "rest api development", false));
+
+springClasses.stream()
+    .filter(oc -> oc.getTitle().startsWith("spring"))
+    .forEach(oc -> System.out.println(oc.getId()));
+
+//1 2 3 4
+```
+
+- "close 되지 않은 수업"
+```java
+List<OnlineClass> springClasses = new ArrayList<>();
+springClasses.add(new OnlineClass(1, "spring boot", true));
+springClasses.add(new OnlineClass(2, "spring data jpa", true));
+springClasses.add(new OnlineClass(3, "spring mvc", false));
+springClasses.add(new OnlineClass(4, "spring core", false));
+springClasses.add(new OnlineClass(5, "rest api development", false));
+        
+springClasses.stream()
+    .filter(oc -> !oc.isClosed())
+    .forEach(oc -> System.out.println(oc.getId()));
+
+springClasses.stream()
+    .filter(Predicate.not(OnlineClass::isClosed))
+    .forEach(oc -> System.out.println(oc.getId()));
+
+// 3 4 5
+```
+
+- "수업 이름만 모아서 스트림 만들기"
+```java
+springClasses.stream()
+    .map(OnlineClass::getTitle)
+    .forEach(System.out::println);
+
+/*
+spring boot
+spring data jpa
+spring mvc
+spring core
+rest api development
+ */
+```
+
+- "두 수업 목록에 들어있는 모든 수업 아이디 출력"
+```java
+List<OnlineClass> springClasses = new ArrayList<>();
+springClasses.add(new OnlineClass(1, "spring boot", true));
+springClasses.add(new OnlineClass(2, "spring data jpa", true));
+springClasses.add(new OnlineClass(3, "spring mvc", false));
+springClasses.add(new OnlineClass(4, "spring core", false));
+springClasses.add(new OnlineClass(5, "rest api development", false));
+
+List<OnlineClass> javaClasses = new ArrayList<>();
+javaClasses.add(new OnlineClass(6, "The Java, Test", true));
+javaClasses.add(new OnlineClass(7, "The Java, Code manipulation", true));
+javaClasses.add(new OnlineClass(8, "The Java, 8 to 11", false));
+
+List<List<OnlineClass>> keesunEvents = new ArrayList<>();
+keesunEvents.add(springClasses);
+keesunEvents.add(javaClasses);
+
+keesunEvents.stream()
+    .flatMap(Collection::stream)
+    .forEach(oc -> System.out.println(oc.getId()));
+//1 2 3 4 5 6 7 8
+```
+
+- "10부터 1씩 증가하는 무제한 스트림 중에서 앞에 10개 빼고 최대 10개 까지만"
+```java
+Stream.iterate(10, i -> i + 1)
+    .skip(10)
+    .limit(10)
+    .forEach(System.out::println);
+
+// 20 21 22 23 24 25 26 27 28 29
+```
+
+- "자바 수업 중에 Test가 들어있는 수업이 있는지 확인"
+```java
+boolean test = javaClasses.stream().anyMatch(oc -> oc.getTitle().contains("Test"));
+
+// test = true
+```
+
+- "스프링 수업 중에 제목에 spring이 들어간 것만 모아서 List로 만들기"
+```java
+List<String> spring = springClasses.stream()
+    .filter(oc -> oc.getTitle().contains("spring"))
+    .map(OnlineClass::getTitle)
+    .collect(Collectors.toList());
+
+/*
+spring boot
+spring data jpa
+spring mvc
+spring core
+ */
+```
