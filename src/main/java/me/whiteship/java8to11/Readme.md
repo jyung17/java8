@@ -621,3 +621,229 @@ spring mvc
 spring core
  */
 ```
+
+## 10. Optional 소개
+### 자바 프로그래밍에서 NullPointerException을 종종 보게 되는 이유
+- null을 리턴하니까! && null 체크를 깜빡했으니까!
+
+### 메소드에서 작업 중 특별한 상황에서 값을 제대로 리턴할 수 없는 경우 선택할 수 있는 방법
+- 에외를 던진다. (비싸다, 스택트레이스를 찍어두니까.)
+- null을 리턴한다. (비용 문제가 없지만 그 코드를 사용하는 클라이언트 코드가 주의해야 한다.)
+- (자바 8부터) Optional을 리턴한다. (클라이언트에 코드에게 명시적으로 빈 값일 수도 있다는 걸 알려주고, 빈 값인 경우에 대한 처리를 강제한다.)
+
+### Optional
+- 오직 값 한 개가 들어있을 수도 없을 수도 있는 컨테이너.
+
+### 주의할 것
+- 리턴값으로만 쓰기를 권장한다. (메소드 매개변수 타입, 맵의 키 타입, 인스턴스 필드 타입으로 쓰지 말자.)
+- Optional을 리턴하는 메소드에서 null을 리턴하지 말자.
+- 프리미티브 타입용 Optional을 따로 있다. OptionalInt, OptionalLong, ...
+- Collection, Map, Stream Array, Optional은 Optional로 감싸지 말 것.
+
+### 참고
+- [https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html](https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html)
+- [https://www.oracle.com/technical-resources/articles/java/java8-optional.html](https://www.oracle.com/technical-resources/articles/java/java8-optional.html)
+- 이팩티브 자바 3판, 아이템 55 적절한 경우 Optional을 리턴하라.
+
+## 11. Optional API
+### Optional 만들기
+- Optional.of()
+value가 null인 경우 NullPointerException을 던집니다. 반드시 값이 있어야 하는 객체인 경우 해당 메서드를 사용하면 됩니다.
+
+```java
+Throws: NullPointerException – if value is null
+public static <T> Optional<T> of(T value) {
+        return new Optional<>(Objects.requireNonNull(value));
+        }
+
+Optional<String> optional = Optional.of("String");
+```
+
+- Optional.ofNuallable()
+value가 null인 경우 비어있는 Optional을 반환합니다. 값이 null일수도 있는 것은 해당 메서드를 사용하면 됩니다.
+
+```java
+public static <T> Optional<T> ofNullable(T value) {
+    return value == null ? (Optional<T>) EMPTY
+    : new Optional<>(value);
+    }
+
+Optional<String> optional = Optional.ofNuallable(null);
+```
+
+- Optional.empty()
+비어있는 Optional 객체를 생성합니다. 조건에 따라 분기를 태워야 하고 반환할 값이 없는 경우에도 사용합니다.
+
+```java
+public static<T> Optional<T> empty() {
+@SuppressWarnings("unchecked")
+        Optional<T> t = (Optional<T>) EMPTY;
+        return t;
+        }
+
+Optional<String> optional = Optional.empty();
+```
+
+### Optional에 값이 있는지 없는지 확인하기
+- isPresent()
+값이 있으면 true를 반환하고 그렇지 않으면 false를 반환합니다.
+- isEmpty() (Java 11부터 제공)
+값이 없으면 true를 반환하고 그렇지 않으면 false를 반환합니다.
+
+```java
+List<OnlineClass> springClasses = new ArrayList<>();
+springClasses.add(new OnlineClass(1, "spring boot", true));
+springClasses.add(new OnlineClass(5, "rest api development", false));
+
+Optional<OnlineClass> optional = springClasses.stream()
+    .filter(oc -> oc.getTitle().startsWith("jpa"))
+    .findFirst();
+
+boolean present = optional.isPresent();
+boolean empty = optional.isEmpty();
+
+/*
+present = false
+empty = true
+*/
+```
+
+### Optional에 있는 값 가져오기
+- get()
+- 만약 비어있는 Optional에서 무언가를 꺼낸다면??
+
+```java
+String title = optional.get().getTitle();
+System.out.println("title = " + title);
+
+//title = spring boot
+
+//비어있는 경우
+Exception in thread "main" java.util.NoSuchElementException: No value present
+```
+
+### Optional에 값이 있는 경우에 그 값을 가지고 ~~를 하라.
+- ifPresent(Consumer)
+- 예) Spring으로 시작하는 수업이 있으면 id를 출력하라.
+
+```java
+List<OnlineClass> springClasses = new ArrayList<>();
+springClasses.add(new OnlineClass(1, "spring boot", true));
+springClasses.add(new OnlineClass(5, "rest api development", false));
+
+Optional<OnlineClass> optional = springClasses.stream()
+    .filter(oc -> oc.getTitle().startsWith("jpa"))
+    .findFirst();
+
+// if 문으로 체크할 필요없이 optional.ifPresent() 메서드를 사용할 수 있다.
+optional.ifPresent(oc -> {
+  System.out.println("oc.getTitle() = " + oc.getTitle());
+});
+
+//oc.getTitle() = spring boot
+```
+
+### Optional에 값이 있으면 가져오고 없는 경우에 ~~를 리턴하라.
+- orElse(T)
+- 예) JPA로 시작하는 수업이 없다면 비어있는 수업을 리턴하라.
+최종적으로 연산을 끝낸 후에도 옵셔널 객체가 비어있다면 기본값으로 제공할 객체를 지정합니다.
+비어있든 비어있지 않든 createNewJpaClass()메서드 항상 리턴
+
+```java
+List<OnlineClass> springClasses = new ArrayList<>();
+springClasses.add(new OnlineClass(1, "spring boot", true));
+springClasses.add(new OnlineClass(5, "rest api development", false));
+
+Optional<OnlineClass> optional = springClasses.stream()
+    .filter(oc -> oc.getTitle().startsWith("jpa"))
+    .findFirst();
+
+OnlineClass onlineClass = optional.orElse(createNewJpaClass());
+System.out.println("onlineClass = " + onlineClass.getTitle());
+
+//jpa로 시작하는 수업이 있을 때
+//creating new online class
+//onlineClass = New class
+
+//jpa로 시작하는 수업이 없을 때
+//creating new online class
+//onlineClass = spring boot
+```
+
+### Optional에 값이 있으면 가져오고 없는 경우에 ~~를 하라.
+- orElseGet(SUpplier)
+- 예) JPA로 시작하는 수업이 없다면 새로 만들어서 리턴하라.
+최종적으로 연산을 끝낸 후에도 옵셔널 객체가 비어있다면 기본값으로 제공할 공급자 함수Supplier를 지정합니다.
+값이 없는 경우에만 실행(App::createNewJpaClass)
+
+```java
+List<OnlineClass> springClasses = new ArrayList<>();
+springClasses.add(new OnlineClass(1, "spring boot", true));
+springClasses.add(new OnlineClass(5, "rest api development", false));
+
+Optional<OnlineClass> optional = springClasses.stream()
+    .filter(oc -> oc.getTitle().startsWith("jpa"))
+    .findFirst();
+
+OnlineClass onlineClass2 = optional.orElseGet(App::createNewJpaClass);
+System.out.println("onlineClass2 = " + onlineClass2.getTitle());
+
+//jpa로 시작하는 수업이 있을 때
+//onlineClass2 = jpa boot
+
+//jpa로 시작하는 수업이 없을 때
+//creating new online class
+//onlineClass2 = New class
+```
+
+### Optional에 값이 있으면 가져오고 없는 경우 에러를 던져라.
+- orElseThrow()
+
+```java
+OnlineClass onlineClass3 = optional.orElseThrow();
+System.out.println("onlineClass3 = " + onlineClass3.getTitle());
+
+OnlineClass onlineClass3_1 = optional.orElseThrow(() -> {
+  return new IllegalArgumentException();
+});
+System.out.println("onlineClass3 = " + onlineClass3_1.getTitle());
+
+OnlineClass onlineClass3_2 = optional.orElseThrow(IllegalArgumentException::new);
+System.out.println("onlineClass3 = " + onlineClass3_2.getTitle());
+```
+
+### Optional에 들어있는 값 걸러내기
+- Optional filter(Predicate)
+predicate 값이 참이면 해당 필터를 통과시키고 거짓이면 통과 되지 않습니다.
+
+```java
+Optional<OnlineClass> onlineClass_filter = optional
+    .filter(oc -> !oc.isClosed());
+System.out.println("onlineClass_filter.isEmpty() = " + onlineClass_filter.isEmpty());
+System.out.println("onlineClass_filter.isPresent() = " + onlineClass_filter.isPresent());
+
+//onlineClass_filter.isEmpty() = true
+//onlineClass_filter.isPresent() = false
+```
+
+### Optional에 들어있는 값 변환하기
+- Optional map(Function)
+- Optional flatMap(Function): Optional 안에 들어있는 인스턴스가 Optional인 경우에 사용하면 편리하다.
+
+```java
+Optional<Integer> integer = optional.map(OnlineClass::getId);
+System.out.println("integer = " + integer.isPresent());
+
+
+Optional<Progress> progress = optional.flatMap(OnlineClass::getProgress);
+
+Optional<Optional<Progress>> progress1 = optional.map(OnlineClass::getProgress);
+Optional<Progress> progress2 = progress1.orElse(Optional.empty());
+
+//integer = true
+```
+
+
+### 참조
+- [https://www.inflearn.com/course/the-java-java8](https://www.inflearn.com/course/the-java-java8)
+- [https://jdm.kr/blog/234](https://jdm.kr/blog/234)
